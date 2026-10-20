@@ -7,6 +7,8 @@ build/
 
 #Variables de entorno
 .env
+.env.*
+!.env.example
 
 #Logs y carpetas del sistema
 .DS_Store

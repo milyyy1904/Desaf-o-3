@@ -1,27 +1,52 @@
-export const WeatherInfo = ({ weather }) => {
-  if (!weather) return null;
+import React from 'react';
 
-  return (
-    <div className="bg-blue-50 rounded-xl p-6 shadow-inner mt-4 border border-blue-100">
-      <h4 className="text-xl font-bold text-blue-900 mb-3">Clima actual en la capital</h4>
-      <div className="grid grid-cols-2 gap-4 text-gray-700">
-        <div className="flex items-center space-x-2">
-          <span className="font-semibold">Temperatura:</span>
-          <span>{Math.round(weather.main?.temp)} °C</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="font-semibold">Estado:</span>
-          <span className="capitalize">{weather.weather?.[0]?.description}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="font-semibold">Humedad:</span>
-          <span>{weather.main?.humidity}%</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="font-semibold">Viento:</span>
-          <span>{weather.wind?.speed} m/s</span>
-        </div>
-      </div>
-    </div>
-  );
+export const WeatherInfo = ({ weather }) => {
+// Validar que existan los datos necesarios antes de mostrarlos.
+if (
+!weather ||
+!weather.main ||
+!weather.weather?.[0] ||
+!weather.wind
+) {
+return null;
+}
+
+return (
+<div className="weather-box">
+<h3>Clima actual en la capital</h3>
+
+  <div className="weather-grid">
+    <p>
+      <strong>Temperatura:</strong>{' '}
+      {typeof weather.main.temp === 'number'
+        ? `${Math.round(weather.main.temp)} °C`
+        : 'No disponible'}
+    </p>
+
+    <p>
+      <strong>Estado:</strong>{' '}
+      <span className="capitalize">
+        {weather.weather[0].description || 'No disponible'}
+      </span>
+    </p>
+
+    <p>
+      <strong>Humedad:</strong>{' '}
+      {typeof weather.main.humidity === 'number'
+        ? `${weather.main.humidity}%`
+        : 'No disponible'}
+    </p>
+
+    <p>
+      <strong>Viento:</strong>{' '}
+      {typeof weather.wind.speed === 'number'
+        ? `${weather.wind.speed} m/s`
+        : 'No disponible'}
+    </p>
+  </div>
+</div>
+
+);
 };
+
+export default WeatherInfo;

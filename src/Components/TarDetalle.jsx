@@ -1,62 +1,157 @@
-import { useState, useEffect } from 'react';
-import { getWeatherByCity } from '../api/ClimaApiApi';
-import { WeatherInfo } from './InfoClima';
-import { Loader } from './Loader';
+import React, { useState, useEffect } from 'react';
+import { fetchWeatherByCapital } from '../api/ClimaApi';
+import Loader from './Loader';
+import WeatherInfo from './InfoClima';
 
-export const CountryDetail = ({ country, onBack }) => {
-  const [weather, setWeather] = useState(null);
-  const [loadingWeather, setLoadingWeather] = useState(false);
-  const [weatherError, setWeatherError] = useState(null);
+export default function TarDetalle({ country, onClose }) {
+const [weather, setWeather] = useState(null);
+const [loadingWeather, setLoadingWeather] = useState(false);
+const [errorWeather, setErrorWeather] = useState('');
+const [retry, setRetry] = useState(0);
 
-  useEffect(() => {
-    const capital = country.capital?.[0];
-    if (!capital) {
-      setWeatherError('Este país no cuenta con una capital registrada para consultar el clima.');
-      return;
+const capital = country?.capital?.[0] || '';
+
+useEffect(() => {
+if (!country) {
+setWeather(null);
+setErrorWeather('');
+setLoadingWeather(false);
+return;
+}
+
+let cancelled = false;
+
+const loadWeather = async () => {
+  setWeather(null);
+  setErrorWeather('');
+
+  if (!capital) {
+    setLoadingWeather(false);
+    setErrorWeather(
+      'Este país no tiene una capital disponible.'
+    );
+    return;
+  }
+
+  setLoadingWeather(true);
+
+  try {
+    const data = await fetchWeatherByCapital(capital);
+
+    if (!cancelled) {
+      setWeather(data);
     }
-
-    const fetchWeather = async () => {
-      setLoadingWeather(true);
-      setWeatherError(null);
-      try {
-        const data = await getWeatherByCity(capital);
-        setWeather(data);
-      } catch (err) {
-        setWeatherError('No se pudo cargar el clima para esta capital.');
-      } finally {
-        setLoadingWeather(false);
-      }
-    };
-
-    fetchWeather();
-  }, [country]);
-
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto border border-gray-200">
-      <button 
-        onClick={onBack}
-        className="mb-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors"
-      >
-        ← Volver a la lista
-      </button>
-
-      <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
-        <img 
-          src={country.flags?.svg || country.flags?.png} 
-          alt={`Bandera de ${country.name?.common}`} 
-          className="w-48 h-32 object-cover rounded-lg shadow-md border"
-        />
-        <div className="text-center md:text-left">
-          <h2 className="text-3xl font-bold text-gray-900">{country.name?.common}</h2>
-          <p className="text-lg text-gray-600 mt-1">Capital: <span className="font-medium text-gray-800">{country.capital?.[0] || 'N/A'}</span></p>
-          <p className="text-sm text-gray-500 mt-1">Región: {country.region}</p>
-          <p className="text-sm text-gray-500">Población: {country.population?.toLocaleString()}</p>
-        </div>
-      </div>
-
-      {loadingWeather && <Loader />}
-      {weatherError && <p className="text-red-500 text-center font-medium my-4">{weatherError}</p>}
-      {weather && <WeatherInfo weather={weather} />}
-    </div>
-  );
+  } catch (err) {
+    if (!cancelled) {
+      setErrorWeather(
+        err.message || 'No fue posible consultar el clima.'
+      );
+    }
+  } finally {
+    if (!cancelled) {
+      setLoadingWeather(false);
+    }
+  }
 };
+
+loadWeather();
+
+return () => {
+  cancelled = true;
+};
+
+}, [country, capital, retry]);
+
+if (!country) {
+return null;
+}
+
+const population =
+typeof country.population === 'number'
+? country.population.toLocaleString('es-SV')
+: 'No disponible';
+
+return (
+<div
+className="modal-overlay"
+onClick={onClose}
+>
+<div
+className="modal"
+role="dialog"
+aria-modal="true"
+aria-labelledby="country-title"
+onClick={(event) => event.stopPropagation()}
+>
+<button
+type="button"
+className="close-button"
+onClick={onClose}
+aria-label="Cerrar detalles"
+>
+×
+</button>
+
+    <div className="detail-header">
+      <img
+        src={country.flags?.svg || country.flags?.png}
+        alt={`Bandera de ${country.name?.common || 'país'}`}
+        className="country-flag"
+      />
+
+      <div className="country-info">
+        <h2 id="country-title">
+          {country.name?.common || 'País sin nombre'}
+        </h2>
+
+        <p>
+          Región: {country.region || 'No disponible'}
+        </p>
+      </div>
+    </div>
+
+    <section className="detail-section">
+      <p>
+        <strong>Población:</strong> {population}
+      </p>
+
+      <p>
+        <strong>Capital:</strong>{' '}
+        {capital || 'No disponible'}
+      </p>
+    </section>
+
+    <section className="detail-section">
+      {loadingWeather ? (
+        <>
+          <h3>Clima en la capital</h3>
+          <p>
+            Consultando el clima de {capital}...
+          </p>
+          <Loader />
+        </>
+      ) : errorWeather ? (
+        <div className="weather-box">
+          <h3>No se pudo consultar el clima</h3>
+
+          <p className="error-message">
+            {errorWeather}
+          </p>
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setRetry((value) => value + 1)}
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : weather ? (
+        <WeatherInfo weather={weather} />
+      ) : null}
+    </section>
+  </div>
+</div>
+
+);
+}

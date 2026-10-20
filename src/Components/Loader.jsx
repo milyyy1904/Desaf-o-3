@@ -1,8 +1,9 @@
-export const Loader = () => {
+import React from 'react';
+
+export default function Loader() {
   return (
-    <div className="flex justify-center items-center p-8">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      <span className="ml-3 text-lg font-medium">Cargando información...</span>
+    <div className="flex justify-center items-center py-10">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   );
-};
+}
